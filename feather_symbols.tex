@@ -1,0 +1,73 @@
+% vim: set fileencoding=utf8 :
+
+\newcommand{\euclidspace}[1]{E^{#1}}
+\newcommand{\motionspace}[1]{M^{#1}}
+\newcommand{\forcespace}[1]{F^{#1}}
+
+\newcommand{\motionvec}{\mathbf{m}}
+\newcommand{\motionvecHat}{\hat{\motionvec}}
+\newcommand{\motionvecOrigin}[1]{\motionvec_{#1}}
+\newcommand{\motionvecHatOrigin}[1]{\motionvecHat_{#1}}
+
+\newcommand{\motionvecDot}{\dot{\motionvec}}
+\newcommand{\motionvecDotHat}{\dot{\motionvecHat}}
+
+\newcommand{\motionvecFrame}[1]{{^{#1}\mathbf{m}}}
+\newcommand{\motionvecHatFrame}[1]{{^{#1}\hat{\motionvec}}}
+
+\newcommand{\velocityvec}{\mathbf{v}}
+\newcommand{\velocityvecHat}{\hat{\velocityvec}}
+\newcommand{\velocityvecOrigin}[1]{\velocityvec_{#1}}
+\newcommand{\velocityvecHatOrigin}[1]{\velocityvecHat_{#1}}
+
+\newcommand{\velocityvecDot}{\dot{\velocityvec}}
+\newcommand{\velocityvecDotHat}{\dot{\velocityvecHat}}
+\newcommand{\velocityvecDotOrigin}[1]{\dot{\velocityvecHat}_{#1}}
+\newcommand{\velocityvecDotHatOrigin}[1]{\dot{\velocityvecHat}_{#1}}
+
+\newcommand{\accelvec}{\mathbf{a}}
+\newcommand{\accelvecHat}{\hat{\accelvec}}
+\newcommand{\accelvecOrigin}[1]{\accelvec_{#1}}
+\newcommand{\accelvecHatOrigin}[1]{\accelvecHat_{#1}}
+
+\newcommand{\forcevec}{\mathbf{f}}
+\newcommand{\forcevecHat}{\hat{\forcevec}}
+\newcommand{\forcevecOrigin}[1]{\forcevec_{#1}}
+\newcommand{\forcevecHatOrigin}[1]{\forcevecHat_{#1}}
+
+\newcommand{\forcevecDot}{\dot{\forcevec}}
+\newcommand{\forcevecDotHat}{\dot{\forcevecHat}}
+
+\newcommand{\forcevecFrame}[1]{{^{#1}\mathbf{f}}}
+\newcommand{\forcevecHatFrame}[1]{{^{#1}\hat{\forcevec}}}
+
+\newcommand{\coord}[3]{{^#2\! #3\! _#1}}
+\newcommand{\coordM}[4]{{^#2\! #3\! {_{#1}^{#4}}}}
+\newcommand{\coordDual}[3]{{}^#2\! {#3}^{*}_{\! #1}}
+\newcommand{\coordTrans}[3]{{}^#2\! {#3}^{T}_{\! #1}}
+\newcommand{\coordInv}[3]{{}^#2\! {#3}^{-1}_{\! #1}}
+
+\newcommand{\utransform}{X}
+\newcommand{\transform}[2]{\coord{#1}{#2}{\utransform}}
+\newcommand{\transformDual}[2]{\coordDual{#1}{#2}{\utransform}}
+\newcommand{\transformTrans}[2]{\coordTrans{#1}{#2}{\utransform}}
+\newcommand{\transformInv}[2]{\coordInv{#1}{#2}{\utransform}}
+\newcommand{\transformM}[3]{\coordM{#1}{#2}{\utransform}{#3}}
+
+\newcommand{\urotation}{E}
+\newcommand{\rotation}[2]{\coord{#1}{#2}{\urotation}}
+\newcommand{\rotationM}[3]{\coordM{#1}{#2}{\urotation}{#3}}
+
+\newcommand{\utranslation}{r}
+\newcommand{\translation}[2]{\coord{#1}{#2}{\utranslation}}
+\newcommand{\translationM}[3]{\coordM{#1}{#2}{\utranslation}{#3}}
+
+\newcommand{\inertia}{\mathbf{I}}
+\newcommand{\inertiaBar}{\bar{\inertia}}
+\newcommand{\inertiaBarOrigin}[1]{\inertiaBar_{#1}}
+
+\newcommand{\momentum}{\mathbf{h}}
+\newcommand{\momentumHat}{\hat{\momentum}}
+
+\newcommand{\bodycom}{\mathbf{c}}
+\newcommand{\mass}{\mathbf{m}}

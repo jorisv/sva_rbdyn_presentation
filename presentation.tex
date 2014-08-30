@@ -1,0 +1,180 @@
+\documentclass{beamer}
+
+\usetheme{PaloAlto}
+\usecolortheme{crane}
+
+\title
+{A short introduction to SVA and RBDyn}
+\author
+{Joris Vaillant}
+\institute{LIRMM}{}
+\date{Thursday 4 2014}
+\subject{Spatial Vector Algebra, Rigid Body Physics}
+
+\usepackage{graphicx}      % include this line if your document contains figures
+\usepackage{amsmath} % assumes amsmath package installed
+\usepackage{amsfonts} %% pour mathbb
+
+\input{./feather_symbols.tex}
+
+\begin{document}
+	\frame{\titlepage}
+
+	\begin{frame}
+		\frametitle{Table of Contents}
+		\tableofcontents[currentsection]
+  	\end{frame}
+
+
+  	\begin{frame}
+		\frametitle{Spatial Vector Algebra}
+		\framesubtitle{What is it ?}
+		Spatial vector algebra is a concise vector notation for describing rigid−body velocity,
+		acceleration, inertia, etc., using 6D vectors and tensors.
+		\begin{itemize}
+			\item fewer quantities
+			\item fewer equations
+			\item less effort
+			\item fewer mistakes
+		\end{itemize}
+  	\end{frame}
+
+
+  	\begin{frame}
+		\frametitle{Spatial Vector Algebra}
+		\framesubtitle{Spatial vector spaces}
+		There is 2 vector spaces:
+		\begin{itemize}
+			\item $ \motionspace{6} $ - motion vector (velocity, acceleration, ...)
+			\item $ \forcespace{6} $ - force vector (momentum, force, ...)
+		\end{itemize}
+  	\end{frame}
+
+
+  	\begin{frame}
+		\frametitle{Spatial Vector Algebra}
+		\framesubtitle{Spatial velocity vector}
+		The spatial velocity of a point $ O $ of a body is:
+		\begin{subequations}
+			$$
+			\velocityvecHatOrigin{O} = \begin{bmatrix} w_x \\ w_y \\ w_z \\ v_{Ox} \\ v_{Oy} \\ v_{Oz} \end{bmatrix} = \begin{bmatrix} w \\ v_O \end{bmatrix}
+			$$
+			$$
+			\motionvecHatOrigin{O} \in \motionspace{6}
+			$$
+		\end{subequations}
+		With the angular velocity:
+		$ w = \begin{bmatrix} w_x\ w_y\ w_z \end{bmatrix}^T $\\
+		And the linear velocity at O:
+		$ v_O = \begin{bmatrix} v_{Ox}\ v_{Oy}\ v_{Oz} \end{bmatrix}^T $
+	\end{frame}
+
+
+  	\begin{frame}
+		\frametitle{Spatial Vector Algebra}
+		\framesubtitle{Spatial acceleration vector}
+		The spatial acceleration of a point $ O $ of a body is:
+		\begin{subequations}
+			$$
+			\accelvecHatOrigin{O} = \velocityvecDotHatOrigin{O} = \begin{bmatrix} \dot{w} \\ \dot{v}_O \end{bmatrix}
+			$$
+			$$
+			\accelvecHatOrigin{O} \in \motionspace{6}
+			$$
+		\end{subequations}
+		Beware that $ \dot{v}_O $ state for tangential acceleration and normal acceleration.
+		If we define $ r_O $ the body O point coordinate at time $ t $, $ \dot{r}_O $ his derivative and $ \ddot{r}_O $ his acceleration, then $ \dot{v}_O = \ddot{r}_O - w \times \dot{r}_O $ 
+
+		\hfill \\
+		We will use $ \motionvecHat $ to describe a generic motion vector.
+	\end{frame}
+
+
+  	\begin{frame}
+		\frametitle{Spatial Vector Algebra}
+		\framesubtitle{Spatial force vector}
+		The spatial force of a point $ O $ of a body is:
+		\begin{subequations}
+			$$
+			\forcevecHatOrigin{O} = \begin{bmatrix} n_{Ox} \\ n_{Oy} \\ n_{Oz} \\ f_x \\ f_y \\ f_z \end{bmatrix} = \begin{bmatrix} n_O \\ f \end{bmatrix}
+			$$
+			$$
+			\forcevecHatOrigin{O} \in \forcespace{6}
+			$$
+		\end{subequations}
+		With the torque at point O:
+		$ n_O = \begin{bmatrix} n_{Ox}\ n_{Oy}\ n_{Oz} \end{bmatrix}^T $\\
+	        And the force:	
+		$ f = \begin{bmatrix} f_x\ f_y\ f_z \end{bmatrix}^T $.
+	\end{frame}
+
+
+  	\begin{frame}
+		\frametitle{Spatial Vector Algebra}
+		\framesubtitle{Spatial transformations}
+		The motion vector transformation from the frame A to B is written:
+		$$
+		\transform{A}{B} = \begin{bmatrix} \rotation{A}{B} & 0 \\ -\rotation{A}{B} \translation{A}{B} \times & \rotation{A}{B} \end{bmatrix}
+		$$
+		With $ \rotation{A}{B} \in \mathbb{R}^{3{\times}3} $ and $ \translation{A}{B} \in \mathbb{R}^{3} $ the A to B rotation matrix and translation vector.
+
+		\hfill \\
+		To apply the same transformation to a force vector, we must use the dual transform:
+		$$
+		\transformDual{A}{B} = (\transformInv{A}{B})^T
+		$$
+	\end{frame}
+
+
+  	\begin{frame}
+		\frametitle{Spatial Vector Algebra}
+		\framesubtitle{Transformations example}
+		Transform a motion vector in A frame $ \motionvecHatFrame{A} $ to B frame $ \forcevecHatFrame{B} $:
+		$$
+		\motionvecHatFrame{B} = \transform{A}{B} \motionvecHatFrame{A}
+		$$
+
+		Transform a force vector in A frame $ \forcevecHatFrame{A} $ to B frame $ \forcevecHatFrame{B} $:
+		$$
+		\forcevecHatFrame{B} = \transformDual{A}{B} \forcevecHatFrame{A}
+		$$
+
+		Find the transformation between A and C frame:
+		$$
+		\transform{A}{C} = \transform{B}{C}\transform{A}{B}
+		$$
+	\end{frame}
+
+
+  	\begin{frame}
+		\frametitle{Spatial Vector Algebra}
+		\framesubtitle{Spatial inertia}
+		The spatial inertia at the origin O of a body is:
+		$$
+		\inertia = \begin{bmatrix} \inertiaBarOrigin{O} & \mass \bodycom \times \\ -\mass \bodycom \times & \mass1 \end{bmatrix}
+		$$
+		With $ \inertiaBarOrigin{O} $ is the body inertia matrix at his origin O, $ \mass $ the body mass and $ \bodycom = \translation{O}{{CoM}} $ the translation between the body origin and his center of mass.
+
+		\hfill \\
+		This matrix allow to transform a $ \motionspace{6} $ in a $ \forcespace{6} $.
+	\end{frame}
+
+
+  	\begin{frame}
+		\frametitle{Spatial Vector Algebra}
+		\framesubtitle{Spatial inertia use}
+		Transform an acceleration to a force:
+		$$
+		\forcevecHat = \inertia \accelvecHat
+		$$
+		A velocity to a spatial momentum:
+		$$
+		\momentumHat = \inertia \velocityvecHat
+		$$
+		Merge body $ b_2 $ inertia into body $ b_1 $ inertia:
+		$$
+		{}^{b_1+b_2}\inertia = {}^{b_1}\inertia + \transform{{b_2}}{{b_1}} {}^{b_2}\inertia
+		$$
+	\end{frame}
+\end{document}
+
