@@ -329,9 +329,10 @@ backgroundcolor=\color{lbcolor},
   	\begin{frame}[fragile]
 		\frametitle{SpaceVecAlg}
 		\framesubtitle{Utilities}
-		Some usefull functions:
+		Some useful functions:
 		\begin{lstlisting}[language=C++]
 			// Anti trigonometric rotation around 1 axis
+			double theta;
 			Eigen::Matrix3d Ex = sva::RotX(theta); // X rotation
 			Eigen::Matrix3d Ey = sva::RotY(theta); // Y rotation
 			Eigen::Matrix3d Ez = sva::RotZ(theta); // Z rotation
@@ -349,5 +350,83 @@ backgroundcolor=\color{lbcolor},
 		\end{lstlisting}
 	\end{frame}
 
+	\section{Rigid Body System}
+
+  	\begin{frame}
+		\frametitle{Rigid Body System}
+		\framesubtitle{Description}
+		A rigid body system is composed of a set of body linked by joint.
+		There is many kind of rigid body system:
+		\begin{itemize}
+			\item Kinematic chain
+			\item Kinematic tree
+			\item Closed loop kinematic tree
+		\end{itemize}
+		We will focus on kinematic tree.
+	\end{frame}
+  	\begin{frame}
+		\frametitle{Rigid Body System}
+		\framesubtitle{Body}
+		A kinematic tree contains $ N_B $ body.
+
+		\hfill \\
+		A body $ i \in \{1, \cdots, N_B\} $ is associated to an inertia $ I_i $.
+
+		\hfill \\
+		The parent body index of a body $ i \in \{1, \cdots, N_B\} $ is give by the $ \lambda $ array.
+	\end{frame}
+  	\begin{frame}
+		\frametitle{Rigid Body System}
+		\framesubtitle{Joint}
+		A kinematic tree contains $ N_B $ joint.
+
+		\hfill \\
+		A joint $ i \in \{1, \cdots, N_B\} $ support the body $ i $.
+
+		\hfill \\
+		$ jtype(i) $ identify the joint $ i \in \{1, \cdots, N_B\} $ type.
+
+		\hfill \\
+	        The transformation $ \utransform_T(i) $	identify the joint $ i \in \{1, \cdots, N_B\} $
+		static transformation between his parent body $ \lambda(i) $ and the joint $ i $ origin.
+	\end{frame}
+  	\begin{frame}
+		\frametitle{Rigid Body System}
+		\framesubtitle{Joint type}
+		Each joint are characterized by a type $ jtype $.
+
+		\hfill \\
+		This type allow us to size of his general position vector $ \mathbf{q} $ and the size
+		of his general velocity vector $ \mathbf{\alpha} $.
+
+		\hfill \\
+		With the $ jtype $, $ \mathbf{q} $ and $ \mathbf{\alpha} $ we are able to compute the joint
+		transformation $ \utransform_J $ , motion subspace matrix $ \mathbf{S} $ and
+		the joint velocity $ \velocityvec_J $:
+		$$
+		[\utransform_J, \mathbf{S}, \velocityvec_J] = jcalc(jtype, \mathbf{q}, \mathbf{\alpha})
+		$$
+
+		We can compute the joint velocity with the motion subspace matrix and
+		the general velocity vector $ \velocityvec_J = \mathbf{S}\mathbf{\alpha} $.
+		That allow to compute the kinematics tree Jacobian really easily.
+	\end{frame}
+
+	\section{RBDyn Library}
+  	\begin{frame}
+		\frametitle{RBDyn}
+		\framesubtitle{Description}
+		Resume:
+		\begin{itemize}
+			\item Kinematics tree Kinematics and Dynamics algorithm C++11 implementation
+			\item Use Eigen3 and SpaceVecAlg library
+			\item Free, Spherical, Planar, Cylindrical, Revolute, Prismatic joint support
+			\item Translation, Rotation, Vector, CoM, Momentum Jacobian computation
+			\item Inverse dynamics, Forward dynamics
+			\item Kinematics tree body merging/filtering
+			\item Kinematics tree base selection
+			\item Python binding
+		\end{itemize}
+	\end{frame}
 \end{document}
 
