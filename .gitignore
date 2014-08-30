@@ -6,5 +6,9 @@
 *.ilg
 *.ind
 *.log
-Thesis.pdf
+*.nav
+*.out
+*.snm
+*.vrb
+presentation.pdf
 *.toc

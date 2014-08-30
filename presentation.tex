@@ -11,21 +11,51 @@
 \date{Thursday 4 2014}
 \subject{Spatial Vector Algebra, Rigid Body Physics}
 
+\usepackage{listings}
 \usepackage{graphicx}      % include this line if your document contains figures
 \usepackage{amsmath} % assumes amsmath package installed
 \usepackage{amsfonts} %% pour mathbb
 
 \input{./feather_symbols.tex}
 
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
+\lstset{
+backgroundcolor=\color{lbcolor},
+	tabsize=2,
+	%   rulecolor=,
+	language=C++,
+	basicstyle=\scriptsize,
+	upquote=true,
+	aboveskip={1.5\baselineskip},
+	columns=fixed,
+	showstringspaces=false,
+	extendedchars=false,
+	breaklines=true,
+	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	frame=single,
+	showtabs=false,
+	showspaces=false,
+	showstringspaces=false,
+	identifierstyle=\ttfamily,
+	keywordstyle=\color[rgb]{0,0,1},
+	commentstyle=\color[rgb]{0.026,0.512,0.095},
+	stringstyle=\color[rgb]{0.627,0.126,0.941},
+	numberstyle=\color[rgb]{0.205, 0.142, 0.73},
+	%        \lstdefinestyle{C++}{language=C++,style=numbers}’.
+}
+
+
 \begin{document}
 	\frame{\titlepage}
 
 	\begin{frame}
 		\frametitle{Table of Contents}
-		\tableofcontents[currentsection]
+		\tableofcontents
   	\end{frame}
 
 
+	\section{Spatial Vector Algebra}
   	\begin{frame}
 		\frametitle{Spatial Vector Algebra}
 		\framesubtitle{What is it ?}
@@ -148,7 +178,7 @@
 
   	\begin{frame}
 		\frametitle{Spatial Vector Algebra}
-		\framesubtitle{Spatial inertia}
+		\framesubtitle{Spatial rigid body inertia}
 		The spatial inertia at the origin O of a body is:
 		$$
 		\inertia = \begin{bmatrix} \inertiaBarOrigin{O} & \mass \bodycom \times \\ -\mass \bodycom \times & \mass1 \end{bmatrix}
@@ -173,8 +203,151 @@
 		$$
 		Merge body $ b_2 $ inertia into body $ b_1 $ inertia:
 		$$
-		{}^{b_1+b_2}\inertia = {}^{b_1}\inertia + \transform{{b_2}}{{b_1}} {}^{b_2}\inertia
+		{}^{b_1+b_2}\inertia = {}^{b_1}\inertia + \transform{{b_2}}{{b_1}} {}^{b_2}\inertia\transformInv{{b_2}}{{b_1}}
 		$$
 	\end{frame}
+	\section{SpaceVecAlg Library}
+
+  	\begin{frame}
+		\frametitle{SpaceVecAlg}
+		\framesubtitle{What's in ?}
+		\begin{itemize}
+			\item Featherstone Spatial Vector Algebra C++11 implementation
+			\item Header only
+			\item Use Eigen3 as linear algebra library
+			\item Python binding
+		\end{itemize}
+	\end{frame}
+
+
+  	\begin{frame}[fragile]
+		\frametitle{SpaceVecAlg}
+		\framesubtitle{MotionVec}
+		MotionVec is the Spatial Motion Vector implementation:
+		\begin{lstlisting}[language=C++]
+			Eigen::Vector3d w, v;
+
+			sva::MotionVec mv1(w, v); // constructor
+			w == mv1.angular(); // angular getter
+			v == mv1.linear(); // linear getter
+
+			sva::MotionVec mv2;
+			mv1 + mv2; // addition
+			mv1 - mv2; // substraction
+			10.*mv1; // scalar multiplication
+		\end{lstlisting}
+	\end{frame}
+
+
+  	\begin{frame}[fragile]
+		\frametitle{SpaceVecAlg}
+		\framesubtitle{ForceVec}
+		ForceVec is the Spatial Force Vector implementation:
+		\begin{lstlisting}[language=C++]
+			Eigen::Vector3d t, f;
+
+			sva::ForceVec fv1(t, f); // constructor
+			t == mv1.couple(); // couple getter
+			f == mv1.force(); // force getter
+
+			sva::ForceVec fv2;
+			fv1 + fv2; // addition
+			fv1 - fv2; // substraction
+			10.*fv1; // scalar multiplication
+		\end{lstlisting}
+	\end{frame}
+
+
+  	\begin{frame}[fragile]
+		\frametitle{SpaceVecAlg}
+		\framesubtitle{RBInertia}
+		RBInertia is the Spatial Rigid Body Inertia implementation:
+		\begin{lstlisting}[language=C++]
+			Eigen::Vector3d com; // orgin to CoM translation
+			double mass; // rigid body mass
+			Eigen::Vector3d h = com*mass; // first CoM moment
+			Eigen::Matrix3d I; // rigid body inertia at origin
+
+			sva::RBInertia rbi1(mass, h, I); // constructor
+			mass == rbi1.mass(); // mass getter
+			h == rbi1.momentum(); // momentum getter
+			I == rbi1.inertia(); // inertia getter
+
+			sva::RBInertia rbi2(mass, h, I); // constructor
+			rbi1 + rbi2; // addition
+			rbi1 - rbi2; // substraction
+			10.*rbi1; // scalar multiplication (only on mass and h)
+
+			sva::MotionVec mv;
+			sva::ForceVec fv = rbi1*mv;
+		\end{lstlisting}
+	\end{frame}
+
+
+  	\begin{frame}[fragile]
+		\frametitle{SpaceVecAlg}
+		\framesubtitle{PTransform}
+		PTransform is the Spatial Transformation implementation;
+		\begin{lstlisting}[language=C++]
+			Eigen::Matrix3d E; // rotation
+			Eigen::Quaterniond q; // rotation
+			Eigen::Vector3d r; // translation
+
+			sva::PTransform X1(E,r); // constructors
+			sva::PTransform X2(q,r); // quaternion -> matrix
+			sva::PTransform X3 = sva::PTransform::Identity();
+			E == X1.rotation(); // rotation getter
+			r == X1.translation(); // translation getter
+
+			// inverse function
+			E.transpose() == X1.inv().rotation();
+			-E*r == X1.inv().translation();
+		\end{lstlisting}
+	\end{frame}
+  	\begin{frame}[fragile]
+		\frametitle{SpaceVecAlg}
+		\framesubtitle{PTransform}
+		\begin{lstlisting}[language=C++]
+			// motion vector transform and inverse transform
+			sva::MotionVec mv;
+			sva::MotionVec mv1 = X1*mv;
+			mv1 == X1.invMul(mv1);
+
+			// force vector transform and inverse transform
+			sva::ForceVec fv;
+			sva::ForceVec fv1 = X.dualMul(fv);
+			fv == X.transMul(fv1);
+
+			// inertia transform and inverse transform
+			sva::RBInertia rbi;
+			sva::RBinertia rbi1 = X.dualMul(rbi);
+			rbi = X.transMul(rbi1);
+		\end{lstlisting}
+	\end{frame}
+
+
+  	\begin{frame}[fragile]
+		\frametitle{SpaceVecAlg}
+		\framesubtitle{Utilities}
+		Some usefull functions:
+		\begin{lstlisting}[language=C++]
+			// Anti trigonometric rotation around 1 axis
+			Eigen::Matrix3d Ex = sva::RotX(theta); // X rotation
+			Eigen::Matrix3d Ey = sva::RotY(theta); // Y rotation
+			Eigen::Matrix3d Ez = sva::RotZ(theta); // Z rotation
+
+			// 3d projection of an rotation error
+			// x, y, z rotation to go from Ex to Ey
+			Eigen::Vector3d sva::rotationError(Ex, Ey);
+
+			// compute inertia at origin from inertia at CoM
+			Eigen::Matrix3d IatCoM, IatO;
+			Eigen::Matrix3d E; // rotation from origin to com frame
+			Eigen::Vector3d com; // translation from origin to com
+			double mass;
+			IatO = inertiaToOrigin(IatCoM, mass, com, E);
+		\end{lstlisting}
+	\end{frame}
+
 \end{document}
 
