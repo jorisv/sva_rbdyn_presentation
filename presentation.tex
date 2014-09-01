@@ -15,6 +15,7 @@
 \usepackage{graphicx}      % include this line if your document contains figures
 \usepackage{amsmath} % assumes amsmath package installed
 \usepackage{amsfonts} %% pour mathbb
+\usepackage{upquote}
 
 \input{./feather_symbols.tex}
 
@@ -227,11 +228,11 @@ backgroundcolor=\color{lbcolor},
 		\begin{lstlisting}[language=C++]
 			Eigen::Vector3d w, v;
 
-			sva::MotionVec mv1(w, v); // constructor
+			sva::MotionVecd mv1(w, v); // constructor
 			w == mv1.angular(); // angular getter
 			v == mv1.linear(); // linear getter
 
-			sva::MotionVec mv2;
+			sva::MotionVecd mv2;
 			mv1 + mv2; // addition
 			mv1 - mv2; // substraction
 			10.*mv1; // scalar multiplication
@@ -246,11 +247,11 @@ backgroundcolor=\color{lbcolor},
 		\begin{lstlisting}[language=C++]
 			Eigen::Vector3d t, f;
 
-			sva::ForceVec fv1(t, f); // constructor
+			sva::ForceVecd fv1(t, f); // constructor
 			t == mv1.couple(); // couple getter
 			f == mv1.force(); // force getter
 
-			sva::ForceVec fv2;
+			sva::ForceVecd fv2;
 			fv1 + fv2; // addition
 			fv1 - fv2; // substraction
 			10.*fv1; // scalar multiplication
@@ -268,18 +269,18 @@ backgroundcolor=\color{lbcolor},
 			Eigen::Vector3d h = com*mass; // first CoM moment
 			Eigen::Matrix3d I; // rigid body inertia at origin
 
-			sva::RBInertia rbi1(mass, h, I); // constructor
+			sva::RBInertiad rbi1(mass, h, I); // constructor
 			mass == rbi1.mass(); // mass getter
 			h == rbi1.momentum(); // momentum getter
 			I == rbi1.inertia(); // inertia getter
 
-			sva::RBInertia rbi2(mass, h, I); // constructor
+			sva::RBInertiad rbi2(mass, h, I); // constructor
 			rbi1 + rbi2; // addition
 			rbi1 - rbi2; // substraction
 			10.*rbi1; // scalar multiplication (only on mass and h)
 
-			sva::MotionVec mv;
-			sva::ForceVec fv = rbi1*mv;
+			sva::MotionVecd mv;
+			sva::ForceVecd fv = rbi1*mv;
 		\end{lstlisting}
 	\end{frame}
 
@@ -287,15 +288,15 @@ backgroundcolor=\color{lbcolor},
   	\begin{frame}[fragile]
 		\frametitle{SpaceVecAlg}
 		\framesubtitle{PTransform}
-		PTransform is the Spatial Transformation implementation;
+		PTransform is the Spatial Transformation implementation:
 		\begin{lstlisting}[language=C++]
 			Eigen::Matrix3d E; // rotation
 			Eigen::Quaterniond q; // rotation
 			Eigen::Vector3d r; // translation
 
-			sva::PTransform X1(E,r); // constructors
-			sva::PTransform X2(q,r); // quaternion -> matrix
-			sva::PTransform X3 = sva::PTransform::Identity();
+			sva::PTransformd X1(E,r); // constructors
+			sva::PTransformd X2(q,r); // quaternion -> matrix
+			sva::PTransformd X3 = sva::PTransformd::Identity();
 			E == X1.rotation(); // rotation getter
 			r == X1.translation(); // translation getter
 
@@ -309,17 +310,17 @@ backgroundcolor=\color{lbcolor},
 		\framesubtitle{PTransform}
 		\begin{lstlisting}[language=C++]
 			// motion vector transform and inverse transform
-			sva::MotionVec mv;
-			sva::MotionVec mv1 = X1*mv;
+			sva::MotionVecd mv;
+			sva::MotionVecd mv1 = X1*mv;
 			mv1 == X1.invMul(mv1);
 
 			// force vector transform and inverse transform
-			sva::ForceVec fv;
-			sva::ForceVec fv1 = X.dualMul(fv);
+			sva::ForceVecd fv;
+			sva::ForceVecd fv1 = X.dualMul(fv);
 			fv == X.transMul(fv1);
 
 			// inertia transform and inverse transform
-			sva::RBInertia rbi;
+			sva::RBInertiad rbi;
 			sva::RBinertia rbi1 = X.dualMul(rbi);
 			rbi = X.transMul(rbi1);
 		\end{lstlisting}
@@ -412,6 +413,8 @@ backgroundcolor=\color{lbcolor},
 		That allow to compute the kinematics tree Jacobian really easily.
 	\end{frame}
 
+
+
 	\section{RBDyn Library}
   	\begin{frame}
 		\frametitle{RBDyn}
@@ -427,6 +430,290 @@ backgroundcolor=\color{lbcolor},
 			\item Kinematics tree base selection
 			\item Python binding
 		\end{itemize}
+	\end{frame}
+
+  	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Body}
+		A body is constituted of a spatial inertia, and is identified by an unique id and name:
+		\begin{lstlisting}[language=C++]
+			sva::RBInertiad rbi; // body ri
+			Eigen::Vector3d r_com;
+			Eigen::Matrix3d I;
+			double mass;
+			int id;
+			std::string name;
+
+			// constructors
+			rbd::Body b1(rbi, id, name);
+			rbd::Body b2(mass, r_com, I, id, name);
+
+			rbi == b1.inertia(); // inertia getter
+			id == b1.id(); // id getter
+			name == bi1.name(); // name getter
+		\end{lstlisting}
+	\end{frame}
+
+  	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Joint}
+		A joint is constituted of a type, an optional axis, a direction and like the body is identified by an
+		unique id and name:
+		\begin{lstlisting}[language=C++]
+			Joint::Type type; // Rev, Prism, Spherical, Planar, Cylindrical, Free and Fixed
+			Eigen::Vector3d axis; // For Rev, Prism and Cylindrical
+			bool direction; // true forward, false backward
+			int id;
+			std::string name;
+
+			// constructors
+			rbd::Joint j1(type, axis, direction, id, name);
+			rbd::Joint j2(type, direction, id, name);
+
+			type == j1.type(); // type getter
+			direction == j1.forward(); // direction getter
+			id == j1.id(); // id getter
+			name == j1.name(); // name gette
+		\end{lstlisting}
+	\end{frame}
+  	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Joint}
+		\begin{lstlisting}[language=C++]
+			j1.params(); // q vector size
+			j1.dof(); // alpha vector size
+
+			j1.motionSubsace(); // motion subspace matrix (S)
+
+			// transformation and velocity
+			Eigen::VectorXd q, alpha, alphaDot;
+			j1.pose(q); // X_j transformation matrix
+			j1.motion(alpha); // v_j motion vector
+			j1.tanAccel(alphaDot); // tangential acceleration
+
+			// initialization
+			j1.zeroParam(); // identity q vector
+			j1.zeroDof); // identity alpha, alphaDot vector
+		\end{lstlisting}
+	\end{frame}
+
+  	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{MultiBodyGraph}
+		A non oriented graph that model the robot:
+		\begin{lstlisting}[language=C++]
+			sva::RBInertiad rbi;
+			rbd::Body b1(rbi, 1, "b1"), b2(rbi, 2, "b2"), b3(rbi, 3, "b3");
+			rbd::Joint j1(rbd::Joint::Rev, Eigen::Vector3d::UnitX, true, 1, "j1");
+			rbd::Joint j2(rbd::Joint::Spherical, true, 2, "j2");
+			sva::PTransformd X_12, X_13;
+			sva::PTransformd I(sva::PTransformd::Identity());
+
+			rbd::MultiBodyGraph mbg; // constructor
+			mbg.addBody(b1);mbg.addBody(b2);mbg.addBody(b3);
+			mbg.addJoint(j12);mbg.addJoint(j13);
+
+			// link body b1 to body b2 with joint j1 and static transform X_12
+			mbg.linkBodies(1, X_12, 2, I, 1);
+			// link body b1 to body b3 with joint j2 and static transform X_13
+			mbg.linkBodies(1, X_13, 3, I, 2);
+		\end{lstlisting}
+	\end{frame}
+  	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{MultiBodyGraph}
+		\begin{lstlisting}[language=C++]
+			// create a multibody with b1 as fixed root body
+			rbd::MultiBody mb1 = mbg.makeMultiBody(1, rbd::Joint::Fixed);
+
+			sva::PTransformd X_O_j0, X_b0_j0;
+			// multibody with b2 as planar base 
+			// X_O_j0 is the transform from the world to the planar joint
+			// X_b0_j0 is the transform from b2 to the joint (X_T)
+			rbd::MultiBody mb2 = mbg.makeMultiBody(2, rbd::Joint::Planar, X_O_j0, X_b0_j0);
+
+			// remove a joint and his subtree
+			mbg.removeJoint(...);
+
+			// merge a sub tree in one body
+			mbg.mergeSubBodies(...);
+
+			// compute bodies transformation to them origin
+			mbg.bodiesBaseTransform(...);
+		\end{lstlisting}
+	\end{frame}
+  	\begin{frame}
+		\frametitle{RBDyn}
+		\framesubtitle{MultiBodyGraph illustration}
+	\end{frame}
+
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{MultiBody}
+		Kinematics tree implementation:
+		\begin{lstlisting}[language=C++]
+			mb1.nrBodies() == 3; // Body number
+			mb1.nrJonits() == 3; // Joint number
+
+			mb1.bodies(); // bodies array
+			mb1.joints(); // joints array
+
+			// body that pred/succ a joint
+			mb1.predecessors();
+			mb1.successors();
+			mb1.parents(); // lambda
+			mb1.transfroms(); // X_T array
+
+			// body/joint index by id
+			mb1.bodyIndexById(id);
+			mb1.jointIndexById(id);
+
+			mb1.bodyIndexById(1) != mb2.bodyIndexById(1);
+		\end{lstlisting}
+	\end{frame}
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{MultiBody}
+		\begin{lstlisting}[language=C++]
+			//                     Spherical   Rev   Fixed
+			mb1.nrParams() == 5; //   4         1      0
+			mb1.nrDof() == 4; //      3         1      0
+
+			//                     Spherical   Rev   Planar
+			mb2.nrParams() == 8; //   4         1      3
+			mb2.nrDof() == 7; //      3         1      3
+
+			mb1.jointPosInParam(index) // joint position in q
+			mb1.jointPosInDof(index) // joint position in alpha
+		\end{lstlisting}
+	\end{frame}
+
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{MultiBodyConfig}
+		Configuration of a multi body is separated from his model:
+		\begin{lstlisting}[language=C++]
+			rbd::MultiBodyConfig mbc1(mb1);
+			mbc1.zero(mb1); // set all variable to zero
+
+			// indexed by joint
+			// std::vector<std::vector<double>>
+			mbc1.q; // q generalized position vector
+			mbc1.alpha; // alpha generalized velocity vector
+			mbc1.alphaD; // q generalized acceleration vector
+			mbc1.jointTorque; // joint torque
+
+			// indexed by body
+			mbc1.force; // Force apply on each body
+			mbc1.bodyPosW; // Body transformation in world coord
+			mbc1.bodyVelW; // Body velocity in world coord
+			mbc1.bodyVelB; // Body velocity in body coord
+
+			mbc.gravity; // gravity apply on the system
+			...
+		\end{lstlisting}
+	\end{frame}
+
+
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{MultiBodyConfig usefull functions}
+		\begin{lstlisting}[language=C++]
+			// convert q, alpha, alphaD and force vector
+			// from mbc1 to mbc2
+			// mbc1 and mbc2 must come from the same mbg
+			// don't convert root joint
+			rbd::ConfigConverter(mbc1, mbc2);
+
+			Eigen::VectorXd q;
+			// to and from eigen3 vector
+			paramToVector(mbc.q, q);
+			vectorToParam(q, mbc.q);
+		\end{lstlisting}
+	\end{frame}
+
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Algorithm}
+		\begin{lstlisting}[language=C++]
+			// q -> bodyPosW
+			rbd::forwardKinematics(mb1, mbc1);
+
+			// alpha, FK -> bodyVelW, bodyVelB
+			rbd::forwardVelocity(mb1, mbc1);
+
+			// alphaD, gravity, FV -> jointTorque
+			rbd::InverseDynamics id(mb1);
+			id.inverseDynamics(mb1, mbc1);
+
+			// jointTorque, FV -> alphaD, H, C
+			rbd::ForwardDynamics fd(mb1);
+			fd.forwardDynamics(mb1, mbc1);
+
+			// FK -> CoM
+			rbd::computeCoM(mb1, mbc1);
+
+			// FV -> CoM speed
+			rbd::computeCoMVelocity(mb1, mbc1);
+		\end{lstlisting}
+	\end{frame}
+
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Jacobian}
+		\begin{lstlisting}[language=C++]
+			Eigen::Vector3d bodyPoint;
+			rbd::Jacobian jac(mb1, bodyId, bodyPoint);
+
+			// 6D bodyId world coord jacobian at bodyPoint
+			jac.jacobian(mb1, mbc1);
+			// bodyId coordinate
+			jac.bodyJacobian(mb1, mbc1);
+
+			Eigen::Vector3d vec;
+			// 3D world coord jacobian of a vector in bodyId
+			jac.vectorJacobian(mb1, mbc1, vec);
+			// bodyId coordinate
+			jac.bodyVectorJacobian(mb1, mbc1, vec);
+
+			// translate a jacobian to a specfic point
+			jac.translateJacobian(...);
+
+			// project a jacobian in the robot parameters vector
+			jac.fullJacobian(...);
+		\end{lstlisting}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{RBDyn}
+		\framesubtitle{Other stuff}
+		\begin{itemize}
+			\item $ \dot{J} $ computation
+			\item Jacobian normal acceleration vector $ \dot{J}\dot{\mathbf{q}} $ computation
+			\item CoM Zacobian
+			\item Centroidal Momentum Matrix $ A_g $ and $ \dot{A}_g $
+			\item Centroidal ZMP
+			\item Euler integration
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Next time}
+		\framesubtitle{}
+		We will see how to use SpaceVecAlg and RBDyn in Python with ROS.
+		
+		\hfill \\
+		In the same time we will learn how to use Tasks library to do whole body control on an humanoid robot.
+
+		\hfill \\
+		{\centering
+		Stay tuned !\par}
+		\hfil \\
+		{\centering
+		...\par}
+		\hfill \\
+		{\centering
+		\bf{Questions} ?\par}
 	\end{frame}
 \end{document}
 
