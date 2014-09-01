@@ -91,7 +91,7 @@ backgroundcolor=\color{lbcolor},
 			\velocityvecHatOrigin{O} = \begin{bmatrix} w_x \\ w_y \\ w_z \\ v_{Ox} \\ v_{Oy} \\ v_{Oz} \end{bmatrix} = \begin{bmatrix} w \\ v_O \end{bmatrix}
 			$$
 			$$
-			\motionvecHatOrigin{O} \in \motionspace{6}
+			\velocityvecHatOrigin{O} \in \motionspace{6}
 			$$
 		\end{subequations}
 		With the angular velocity:
@@ -234,7 +234,7 @@ backgroundcolor=\color{lbcolor},
 
 			sva::MotionVecd mv2;
 			mv1 + mv2; // addition
-			mv1 - mv2; // substraction
+			mv1 - mv2; // subtraction
 			10.*mv1; // scalar multiplication
 		\end{lstlisting}
 	\end{frame}
@@ -253,7 +253,7 @@ backgroundcolor=\color{lbcolor},
 
 			sva::ForceVecd fv2;
 			fv1 + fv2; // addition
-			fv1 - fv2; // substraction
+			fv1 - fv2; // subtraction
 			10.*fv1; // scalar multiplication
 		\end{lstlisting}
 	\end{frame}
@@ -266,7 +266,7 @@ backgroundcolor=\color{lbcolor},
 		\begin{lstlisting}[language=C++]
 			Eigen::Vector3d com; // orgin to CoM translation
 			double mass; // rigid body mass
-			Eigen::Vector3d h = com*mass; // first CoM moment
+			Eigen::Vector3d h = com*mass; // first moment of mass
 			Eigen::Matrix3d I; // rigid body inertia at origin
 
 			sva::RBInertiad rbi1(mass, h, I); // constructor
@@ -276,11 +276,11 @@ backgroundcolor=\color{lbcolor},
 
 			sva::RBInertiad rbi2(mass, h, I); // constructor
 			rbi1 + rbi2; // addition
-			rbi1 - rbi2; // substraction
+			rbi1 - rbi2; // subtraction
 			10.*rbi1; // scalar multiplication (only on mass and h)
 
 			sva::MotionVecd mv;
-			sva::ForceVecd fv = rbi1*mv;
+			sva::ForceVecd fv = rbi1*mv; // motion space to force space
 		\end{lstlisting}
 	\end{frame}
 
@@ -338,7 +338,7 @@ backgroundcolor=\color{lbcolor},
 			Eigen::Matrix3d Ey = sva::RotY(theta); // Y rotation
 			Eigen::Matrix3d Ez = sva::RotZ(theta); // Z rotation
 
-			// 3d projection of an rotation error
+			// 3d projection of rotation error
 			// x, y, z rotation to go from Ex to Ey
 			Eigen::Vector3d sva::rotationError(Ex, Ey);
 
@@ -397,20 +397,38 @@ backgroundcolor=\color{lbcolor},
 		Each joint are characterized by a type $ jtype $.
 
 		\hfill \\
-		This type allow us to size of his general position vector $ \mathbf{q} $ and the size
-		of his general velocity vector $ \mathbf{\alpha} $.
+		This type allow us to size of his general position vector $ \mathbf{q}_J $ and the size
+		of his general velocity vector $ \mathbf{\alpha}_J $.
 
 		\hfill \\
-		With the $ jtype $, $ \mathbf{q} $ and $ \mathbf{\alpha} $ we are able to compute the joint
+		With the $ jtype $, $ \mathbf{q}_J $ and $ \mathbf{\alpha}_J $ we are able to compute the joint
 		transformation $ \utransform_J $ , motion subspace matrix $ \mathbf{S} $ and
 		the joint velocity $ \velocityvec_J $:
 		$$
-		[\utransform_J, \mathbf{S}, \velocityvec_J] = jcalc(jtype, \mathbf{q}, \mathbf{\alpha})
+		[\utransform_J, \mathbf{S}, \velocityvec_J] = jcalc(jtype, \mathbf{q}_J, \mathbf{\alpha}_J)
 		$$
 
 		We can compute the joint velocity with the motion subspace matrix and
-		the general velocity vector $ \velocityvec_J = \mathbf{S}\mathbf{\alpha} $.
+		the general velocity vector $ \velocityvec_J = \mathbf{S}\mathbf{\alpha}_J $.
 		That allow to compute the kinematics tree Jacobian really easily.
+	\end{frame}
+	\begin{frame}
+		\frametitle{Rigid Body System}
+		\framesubtitle{Illustration of a kinematics tree}
+		\begin{columns}[T]
+			\begin{column}[T]{5cm}
+				\begin{figure}
+					\includegraphics[height=5cm]{img/robot1_graph.pdf}
+					\caption{Connectivity graph of a rigid body system}
+				\end{figure}
+			\end{column}
+			\begin{column}[T]{5cm}
+				\begin{figure}
+					\includegraphics[height=5cm]{img/robot1_illu.pdf}
+					\caption{Geometric model of a rigid body system}
+				\end{figure}
+			\end{column}
+	     \end{columns}
 	\end{frame}
 
 
@@ -545,6 +563,20 @@ backgroundcolor=\color{lbcolor},
   	\begin{frame}
 		\frametitle{RBDyn}
 		\framesubtitle{MultiBodyGraph illustration}
+		\begin{columns}[T]
+			\begin{column}[T]{5cm}
+				\begin{figure}
+					\includegraphics[height=5cm]{img/robot2_graph.pdf}
+					\caption{mb1 connectivity graph}
+				\end{figure}
+			\end{column}
+			\begin{column}[T]{5cm}
+				\begin{figure}
+					\includegraphics[height=5cm]{img/robot3_graph.pdf}
+					\caption{mb2 connectivity graph}
+				\end{figure}
+			\end{column}
+	     \end{columns}
 	\end{frame}
 
 	\begin{frame}[fragile]
@@ -676,10 +708,10 @@ backgroundcolor=\color{lbcolor},
 			// bodyId coordinate
 			jac.bodyVectorJacobian(mb1, mbc1, vec);
 
-			// translate a jacobian to a specfic point
+			// translate a jacobian to a specific point
 			jac.translateJacobian(...);
 
-			// project a jacobian in the robot parameters vector
+			// project a jacobian in the robot parameter vector
 			jac.fullJacobian(...);
 		\end{lstlisting}
 	\end{frame}
