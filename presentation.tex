@@ -28,7 +28,7 @@ backgroundcolor=\color{lbcolor},
 	language=C++,
 	basicstyle=\scriptsize,
 	upquote=true,
-	aboveskip={1.5\baselineskip},
+	aboveskip={0.5\baselineskip},
 	columns=fixed,
 	showstringspaces=false,
 	extendedchars=false,
@@ -693,10 +693,10 @@ backgroundcolor=\color{lbcolor},
 	\begin{frame}[fragile]
 		\frametitle{RBDyn}
 		\framesubtitle{Jacobian}
+		Like the 6D vector, the rotation part of the Jacobian is the 3 first row and the translation part is the 3 last row.
 		\begin{lstlisting}[language=C++]
 			Eigen::Vector3d bodyPoint;
 			rbd::Jacobian jac(mb1, bodyId, bodyPoint);
-
 			// 6D bodyId world coord jacobian at bodyPoint
 			jac.jacobian(mb1, mbc1);
 			// bodyId coordinate
@@ -720,13 +720,176 @@ backgroundcolor=\color{lbcolor},
 		\frametitle{RBDyn}
 		\framesubtitle{Other stuff}
 		\begin{itemize}
-			\item $ \dot{J} $ computation
+			\item Jacobian time derivative $ \dot{J} $ computation
 			\item Jacobian normal acceleration vector $ \dot{J}\dot{\mathbf{q}} $ computation
 			\item CoM Zacobian
 			\item Centroidal Momentum Matrix $ A_g $ and $ \dot{A}_g $
 			\item Centroidal ZMP
 			\item Euler integration
 		\end{itemize}
+	\end{frame}
+
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Example: problem}
+		We want to write a function that given a kinematics tree
+		and the body id of $ b_1 $ and $ b_2 $, return true if it's possible that the two bodies enter in self collision.
+		\\ \hfill
+
+		To solve this problem we have the following structure and function:
+		\begin{lstlisting}[language=C++]
+			// collision data of a robot
+			struct CollisionData;
+
+			// return true if b1 and b2 are in collision
+			bool isInCollision(const sva::PTransformd& Xb1,
+			                   const sva::PTransformd& Xb2,
+			                   int b1Id, int b2Id,
+			                   const CollisionData&);
+		\end{lstlisting}
+		
+		Let's solve this problem by using sampling.
+	\end{frame}
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Example: sampling (1/2)}
+		\begin{lstlisting}[language=C++,basicstyle=\tiny]
+			bool isCollPossible(const rbd::MultiBody& mb, int b1Id, int b2Id,
+			                    const CollisionData& cd, int N)
+			{
+			  rbd::MultiBodyConfig mbc(mb); // create the robot configuration
+			  mbc.zero(mb); // init the configuration to 0
+			  Eigen::VectorXd q(mb.nrParams()); // create q vector as Eigen3 vector
+			  // take the body index from body id
+			  // because mbc.bodyPosW vector is ordered by index
+			  int b1Index = mb.bodyIndexById(b1Id);
+			  int b2Index = mb.bodyIndexById(b2Id);
+
+			  for(int i = 0; i < N; ++i)
+			  {
+			    randomParam(mb, q); // generate a random q vector
+			    rbd::vectorToParam(q, mbc.q); // fill mbc.q vector with q
+			    rbd::forwardKinematics(mb, mbc); // use mbc.q to compute mbc.bodyPosW
+			    if(isInCollision(mbc.bodyPosW[b1Index],
+			       mbc.bodyPosW[b2Index],
+			       b1Id, b2Id, cd))
+			    {
+			      return true;
+			    }
+			  }
+			  return false;
+			}
+		\end{lstlisting}
+	\end{frame}
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Example: sampling (2/2)}
+		\begin{lstlisting}[language=C++,basicstyle=\tiny]
+			void randomParam(const rbd::MultiBody& mb, Eigen::VectorXd& q)
+			{
+			  // fill q with random values
+			  q.setRandom();
+
+			  // if a joint is spherical or free there is a quaternion inside
+			  // so we must normalize it
+			  // spherical = [qw, qx, qy, qz]
+			  // free = [qw, qx, qy, qz, tx, ty, tz]
+			  for(int i = 0; i < mb.nrJoints(); ++i)
+			  {
+			    if(mb.joint(i).type() == rbd::Joint::Spherical ||
+			       mb.joint(i).type() == rbd::Joint::Free)
+			    {
+			      // jointPosInParam find the joint position in the Eigen3 q vector
+			      q.segment(mb.jointPosInParam(i), 4).normalize();
+			    }
+			  }
+			}
+		\end{lstlisting}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{RBDyn}
+		\framesubtitle{Example: using Jacobian}
+		OK, it's cool, we solve the problem using sampling.
+		Some labs could wrote a paper about that...
+		\\ \hfill
+
+		But maybe we could find a better solution.
+		\\ \hfill
+
+		If we find $ \delta q $ that minimize the distance between $ b_1 $ and $ b_2 $
+		we can find if two body can go in collision faster.
+		$$
+		\delta q = (J_{tr_{b_1}} - J_{tr_{b_2}})^{\#} (\translation{O}{{b_1}} - \translation{O}{{b_2}})
+		$$
+		Where $ \# $ state for the pseudo inverse and $ J_{tr} $ the translation Jacobian.
+	\end{frame}
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Example: optim (1/2)}
+		\begin{lstlisting}[language=C++,basicstyle=\tiny]
+			bool isCollPossible(const rbd::MultiBody& mb, int b1Id, int b2Id,
+			                    const CollisionData& cd, int N, double dt)
+			{
+			  rbd::MultiBodyConfig mbc(mb); // create the robot configuration
+			  mbc.zero(mb); // init the configuration to 0
+			  rbd::forwardKinematics(mb, mbc); // use mbc.q to compute mbc.bodyPosW
+			  rbd::forwardVelocity(mb, mbc); // fill mbc.S used by Jacobian
+			  rbd::Jacobian jb1(mb, b1Id), jb2(mb, b2Id); // b1 and b2 jacobian
+			  Eigen::VectorXd alpha(mb.nrDof()); // general velocity vector
+			  // jacobian matrix
+			  Eigen::MatrixXd jMb1(3, mb.nrDof()), jMb2(3, mb.nrDof());
+			  Eigen::MatrixXd jMPInv(mb.nrDof(), 3);
+
+			  int b1Index = mb.bodyIndexById(b1Id);
+			  int b2Index = mb.bodyIndexById(b2Id);
+			  for(int i = 0; i < N; ++i)
+			  {
+			    // compute delta q and put it in mbc.alpha
+			    computeDQ(mb, mbc, alpha, b1Index, b2Index,
+			              jb1, jb2, jMb1, jMb2, jPInv)
+			    rbd::eulerIntegration(mb, mbc, dt); // q += dt*alpha
+			    rbd::forwardKinematics(mb, mbc);
+			    if(isInCollision(mbc.bodyPosW[b1Index], mbc.bodyPosW[b2Index],
+			       b1Id, b2Id, cd))
+			    {
+			      return true;
+			    }
+			  }
+			  return false;
+			}
+		\end{lstlisting}
+	\end{frame}
+	\begin{frame}[fragile]
+		\frametitle{RBDyn}
+		\framesubtitle{Example: optim (2/2)}
+		\begin{lstlisting}[language=C++,basicstyle=\tiny]
+			void computeDQ(const rbd::MultiBody& mb, const rbd::MultiBodyConfig& mbc,
+			               Eigen::VectorXd& alpha,
+			               int b1Index, int b2Index, rbd::Jacobian& jb1,
+			               rbd::Jacobian& jb2, Eigen::MatrixXd& jb1M,
+			               Eigen::MatrixXd& jb2M, Eigen::MatrixXd& jPInv)
+			{
+			  // compute the position error between b1 and b2
+			  Eigen::Vector3d err = mbc.bodyPosW[b1Index].translation() -
+			                        mbc.bodyPosW[b2Index].translation();
+			  // compute the b1 and b2 jacobian and take back the translation part
+			  const auto& j1tr = jb1.jacobian(mb, mbc).block(3, 0, 3, jb1.dof());
+			  const auto& j2tr = jb2.jacobian(mb, mbc).block(3, 0, 3, jb2.dof());
+
+			  // project the translation jacobian into full jacobian
+			  jb1.fullJacobian(mb, j1tr, jb1M);
+			  jb2.fullJacobian(mb, j2tr, jb2M);
+
+			  // compute the position minimization jacobian
+			  jb1M -= jb2M;
+
+			  // compute alpha by using the jb1M pseudo inverse
+			  Eigen::pinv(jb1M, jPInv);
+			  alpha = jPinv*err;
+			  rbd::vectorToParam(alpha, mbc.alpha);
+			}
+		\end{lstlisting}
 	\end{frame}
 
 	\begin{frame}
