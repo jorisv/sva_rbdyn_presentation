@@ -147,7 +147,7 @@ backgroundcolor=\color{lbcolor},
 		$$
 		\transform{A}{B} = \begin{bmatrix} \rotation{A}{B} & 0 \\ -\rotation{A}{B} \translation{A}{B} \times & \rotation{A}{B} \end{bmatrix}
 		$$
-		With $ \rotation{A}{B} \in \mathbb{R}^{3{\times}3} $ and $ \translation{A}{B} \in \mathbb{R}^{3} $ the A to B rotation matrix and translation vector.
+		With $ \rotation{A}{B} \in \mathbb{R}^{3{\times}3} $ and $ \translation{A}{B} \in \mathbb{R}^{3} $ the A to B anti trigonometric rotation matrix and translation vector.
 
 		\hfill \\
 		To apply the same transformation to a force vector, we must use the dual transform:
@@ -160,7 +160,7 @@ backgroundcolor=\color{lbcolor},
   	\begin{frame}
 		\frametitle{Spatial Vector Algebra}
 		\framesubtitle{Transformations example}
-		Transform a motion vector in A frame $ \motionvecHatFrame{A} $ to B frame $ \forcevecHatFrame{B} $:
+		Transform a motion vector in A frame $ \motionvecHatFrame{A} $ to B frame $ \motionvecHatFrame{B} $:
 		$$
 		\motionvecHatFrame{B} = \transform{A}{B} \motionvecHatFrame{A}
 		$$
@@ -322,7 +322,7 @@ backgroundcolor=\color{lbcolor},
 			// inertia transform and inverse transform
 			sva::RBInertiad rbi;
 			sva::RBinertia rbi1 = X.dualMul(rbi);
-			rbi = X.transMul(rbi1);
+			rbi == X.transMul(rbi1);
 		\end{lstlisting}
 	\end{frame}
 
@@ -388,7 +388,7 @@ backgroundcolor=\color{lbcolor},
 		$ jtype(i) $ identify the joint $ i \in \{1, \cdots, N_B\} $ type.
 
 		\hfill \\
-	        The transformation $ \utransform_T(i) $	identify the joint $ i \in \{1, \cdots, N_B\} $
+	        The transformation $ \utransform_{Ti} $ identify the joint $ i \in \{1, \cdots, N_B\} $
 		static transformation between his parent body $ \lambda(i) $ and the joint $ i $ origin.
 	\end{frame}
   	\begin{frame}
@@ -455,7 +455,7 @@ backgroundcolor=\color{lbcolor},
 		\framesubtitle{Body}
 		A body is constituted of a spatial inertia, and is identified by an unique id and name:
 		\begin{lstlisting}[language=C++]
-			sva::RBInertiad rbi; // body ri
+			sva::RBInertiad rbi; // body inertia
 			Eigen::Vector3d r_com;
 			Eigen::Matrix3d I;
 			double mass;
@@ -504,14 +504,15 @@ backgroundcolor=\color{lbcolor},
 			j1.motionSubsace(); // motion subspace matrix (S)
 
 			// transformation and velocity
-			Eigen::VectorXd q, alpha, alphaDot;
+			std::vector<double> q(j.params()), alpha(j.dof()),
+			                    alphaDot(j.dof());
 			j1.pose(q); // X_j transformation matrix
 			j1.motion(alpha); // v_j motion vector
 			j1.tanAccel(alphaDot); // tangential acceleration
 
 			// initialization
 			j1.zeroParam(); // identity q vector
-			j1.zeroDof); // identity alpha, alphaDot vector
+			j1.zeroDof(); // identity alpha, alphaDot vector
 		\end{lstlisting}
 	\end{frame}
 
@@ -521,8 +522,10 @@ backgroundcolor=\color{lbcolor},
 		A non oriented graph that model the robot:
 		\begin{lstlisting}[language=C++]
 			sva::RBInertiad rbi;
-			rbd::Body b1(rbi, 1, "b1"), b2(rbi, 2, "b2"), b3(rbi, 3, "b3");
-			rbd::Joint j1(rbd::Joint::Rev, Eigen::Vector3d::UnitX, true, 1, "j1");
+			rbd::Body b1(rbi, 1, "b1"), b2(rbi, 2, "b2"),
+			          b3(rbi, 3, "b3");
+			rbd::Joint j1(rbd::Joint::Rev, Eigen::Vector3d::UnitX,
+			              true, 1, "j1");
 			rbd::Joint j2(rbd::Joint::Spherical, true, 2, "j2");
 			sva::PTransformd X_12, X_13;
 			sva::PTransformd I(sva::PTransformd::Identity());
@@ -585,7 +588,7 @@ backgroundcolor=\color{lbcolor},
 		Kinematics tree implementation:
 		\begin{lstlisting}[language=C++]
 			mb1.nrBodies() == 3; // Body number
-			mb1.nrJonits() == 3; // Joint number
+			mb1.nrJoints() == 3; // Joint number
 
 			mb1.bodies(); // bodies array
 			mb1.joints(); // joints array
@@ -609,14 +612,14 @@ backgroundcolor=\color{lbcolor},
 		\begin{lstlisting}[language=C++]
 			//                     Spherical   Rev   Fixed
 			mb1.nrParams() == 5; //   4         1      0
-			mb1.nrDof() == 4; //      3         1      0
+			mb1.nrDof() == 4;    //   3         1      0
 
 			//                     Spherical   Rev   Planar
 			mb2.nrParams() == 8; //   4         1      3
-			mb2.nrDof() == 7; //      3         1      3
+			mb2.nrDof() == 7;    //   3         1      3
 
-			mb1.jointPosInParam(index) // joint position in q
-			mb1.jointPosInDof(index) // joint position in alpha
+			mb1.jointPosInParam(index) // joint position in flat q
+			mb1.jointPosInDof(index) // joint position in flat alpha
 		\end{lstlisting}
 	\end{frame}
 
@@ -626,7 +629,7 @@ backgroundcolor=\color{lbcolor},
 		Configuration of a multi body is separated from his model:
 		\begin{lstlisting}[language=C++]
 			rbd::MultiBodyConfig mbc1(mb1);
-			mbc1.zero(mb1); // set all variable to zero
+			mbc1.zero(mb1); // set q, alpha, alphaD and jointTorque to 0
 
 			// indexed by joint
 			// std::vector<std::vector<double>>
@@ -634,6 +637,7 @@ backgroundcolor=\color{lbcolor},
 			mbc1.alpha; // alpha generalized velocity vector
 			mbc1.alphaD; // q generalized acceleration vector
 			mbc1.jointTorque; // joint torque
+			mbc.S; // motion subspace matrix
 
 			// indexed by body
 			mbc1.force; // Force apply on each body
@@ -658,7 +662,7 @@ backgroundcolor=\color{lbcolor},
 			rbd::ConfigConverter(mbc1, mbc2);
 
 			Eigen::VectorXd q;
-			// to and from eigen3 vector
+			// to and from flat vector
 			paramToVector(mbc.q, q);
 			vectorToParam(q, mbc.q);
 		\end{lstlisting}
@@ -671,7 +675,7 @@ backgroundcolor=\color{lbcolor},
 			// q -> bodyPosW
 			rbd::forwardKinematics(mb1, mbc1);
 
-			// alpha, FK -> bodyVelW, bodyVelB
+			// alpha, FK -> bodyVelW, bodyVelB, S
 			rbd::forwardVelocity(mb1, mbc1);
 
 			// alphaD, gravity, FV -> jointTorque
@@ -799,7 +803,7 @@ backgroundcolor=\color{lbcolor},
 			    if(mb.joint(i).type() == rbd::Joint::Spherical ||
 			       mb.joint(i).type() == rbd::Joint::Free)
 			    {
-			      // jointPosInParam find the joint position in the Eigen3 q vector
+			      // jointPosInParam find the joint position in the flat q vector
 			      q.segment(mb.jointPosInParam(i), 4).normalize();
 			    }
 			  }
