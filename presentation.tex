@@ -85,7 +85,7 @@ backgroundcolor=\color{lbcolor},
   	\begin{frame}
 		\frametitle{Spatial Vector Algebra}
 		\framesubtitle{Spatial velocity vector}
-		The spatial velocity of a point $ O $ of a body is:
+		The spatial velocity of a body computed at the point $ O $ is:
 		\begin{subequations}
 			$$
 			\velocityvecHatOrigin{O} = \begin{bmatrix} w_x \\ w_y \\ w_z \\ v_{Ox} \\ v_{Oy} \\ v_{Oz} \end{bmatrix} = \begin{bmatrix} w \\ v_O \end{bmatrix}
@@ -104,7 +104,7 @@ backgroundcolor=\color{lbcolor},
   	\begin{frame}
 		\frametitle{Spatial Vector Algebra}
 		\framesubtitle{Spatial acceleration vector}
-		The spatial acceleration of a point $ O $ of a body is:
+		The spatial acceleration of a body computed at the point $ O $ is:
 		\begin{subequations}
 			$$
 			\accelvecHatOrigin{O} = \velocityvecDotHatOrigin{O} = \begin{bmatrix} \dot{w} \\ \dot{v}_O \end{bmatrix}
@@ -312,7 +312,7 @@ backgroundcolor=\color{lbcolor},
 			// motion vector transform and inverse transform
 			sva::MotionVecd mv;
 			sva::MotionVecd mv1 = X1*mv;
-			mv1 == X1.invMul(mv1);
+			mv == X1.invMul(mv1);
 
 			// force vector transform and inverse transform
 			sva::ForceVecd fv;
@@ -726,7 +726,7 @@ backgroundcolor=\color{lbcolor},
 		\begin{itemize}
 			\item Jacobian time derivative $ \dot{J} $ computation
 			\item Jacobian normal acceleration vector $ \dot{J}\dot{\mathbf{q}} $ computation
-			\item CoM Zacobian
+			\item CoM Jacobian
 			\item Centroidal Momentum Matrix $ A_g $ and $ \dot{A}_g $
 			\item Centroidal ZMP
 			\item Euler integration
