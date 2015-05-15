@@ -10,5 +10,6 @@
 *.out
 *.snm
 *.vrb
+*.fls
 presentation.pdf
 *.toc
